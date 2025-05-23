@@ -119,6 +119,26 @@
             font-size: 12px;
             font-weight: 600;
         }
+        .download-btn {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            z-index: 10;
+            padding: 4px 8px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 600;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .download-btn:hover {
+            background-color: rgba(0, 0, 0, 0.9);
+        }
         
         /* Fullscreen viewer styles */
         .fullscreen-viewer {
@@ -179,7 +199,7 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+            background: linear-gradient to top, rgba(0,0,0,0.7), transparent;
             padding: 15px;
             display: flex;
             flex-direction: column;
@@ -326,7 +346,6 @@
                 <div class="p-4">
                     <div class="skeleton bg-gray-200 dark:bg-gray-700 h-5 w-3/4 mb-2"></div>
                     <div class="skeleton bg-gray-200 dark:bg-gray-700 h-4 w-full"></div>
-                    <div class="skeleton bg-gray-200 dark:bg-gray-700 h-4 w-2/3 mt-1"></div>
                 </div>
             </div>
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
@@ -334,7 +353,6 @@
                 <div class="p-4">
                     <div class="skeleton bg-gray-200 dark:bg-gray-700 h-5 w-3/4 mb-2"></div>
                     <div class="skeleton bg-gray-200 dark:bg-gray-700 h-4 w-full"></div>
-                    <div class="skeleton bg-gray-200 dark:bg-gray-700 h-4 w-2/3 mt-1"></div>
                 </div>
             </div>
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
@@ -342,7 +360,6 @@
                 <div class="p-4">
                     <div class="skeleton bg-gray-200 dark:bg-gray-700 h-5 w-3/4 mb-2"></div>
                     <div class="skeleton bg-gray-200 dark:bg-gray-700 h-4 w-full"></div>
-                    <div class="skeleton bg-gray-200 dark:bg-gray-700 h-4 w-2/3 mt-1"></div>
                 </div>
             </div>
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
@@ -350,7 +367,6 @@
                 <div class="p-4">
                     <div class="skeleton bg-gray-200 dark:bg-gray-700 h-5 w-3/4 mb-2"></div>
                     <div class="skeleton bg-gray-200 dark:bg-gray-700 h-4 w-full"></div>
-                    <div class="skeleton bg-gray-200 dark:bg-gray-700 h-4 w-2/3 mt-1"></div>
                 </div>
             </div>
         </div>
@@ -371,7 +387,7 @@
         <div id="errorMessage" class="no-results hidden">
             <i class="fas fa-exclamation-triangle text-red-400 text-5xl mb-4"></i>
             <h3 class="text-xl font-medium text-gray-700 dark:text-gray-300">Failed to load media</h3>
-            <p class="text-gray-500 dark:text-gray-400 mt-2">Please check your internet connection and try again.</p>
+            <p class="text-gray-5 dark:text-gray-400 mt-2">Please check your internet connection and try again.</p>
             <button id="retryButton" class="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
                 Retry
             </button>
@@ -423,7 +439,7 @@
             themeToggle.addEventListener('click', function() {
                 if (document.documentElement.classList.contains('dark')) {
                     document.documentElement.classList.remove('dark');
-                    localStorage.setItem('color-theme', 'light');
+                    localStorage.setItem('color-thetheme', 'light');
                 } else {
                     document.documentElement.classList.add('dark');
                     localStorage.setItem('color-theme', 'dark');
@@ -432,27 +448,29 @@
             
             // Fetch and parse CSV data
             function fetchMedia() {
-                loadingState.classList.remove('hidden');
-                mediaGrid.classList.add('hidden');
-                noResults.classList.add('hidden');
-                errorMessage.classList.add('hidden');
-                
-                // Sample data since we don't have actual CSV
-                fetch('videos.csv')
-  .then(response => response.text())
-  .then(csvText => {
-    mediaItems = parseCSV(csvText);
-    displayMedia(mediaItems);
-    loadingState.classList.add('hidden');
-    mediaGrid.classList.remove('hidden');
-  })
-  .catch(error => {
-    console.error('Error loading media:', error);
-    loadingState.classList.add('hidden');
-    errorMessage.classList.remove('hidden');
-  });
-            }
-            
+    loadingState.classList.remove('hidden');
+    mediaGrid.classList.add('hidden');
+    noResults.classList.add('hidden');
+    errorMessage.classList.add('hidden');
+
+    fetch('./videos.csv')
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.text();
+        })
+        .then(csvText => {
+            mediaItems = parseCSV(csvText);
+            displayMedia(mediaItems);
+            loadingState.classList.add('hidden');
+            mediaGrid.classList.remove('hidden');
+        })
+        .catch(error => {
+            console.error('Error loading media:', error);
+            loadingState.classList.add('hidden');
+            errorMessage.classList.remove('hidden');
+        });
+}
+
             // Parse CSV into array of objects
             function parseCSV(csv) {
                 const lines = csv.split('\n');
@@ -469,14 +487,32 @@
                         obj[headers[j]] = currentline[j] ? currentline[j].trim() : '';
                     }
                     
-                    // Determine media type based on URL extension
+                    // Determine media type based on URL extension or domain
                     if (obj.video_url) {
                         if (obj.video_url.includes('youtube.com') || obj.video_url.includes('youtu.be')) {
                             obj.type = 'youtube';
+                        } else if (obj.video_url.includes('drive.google.com')) {
+                            // Check if it's a Google Drive link
+                            if (obj.video_url.includes('/file/d/')) {
+                                // Try to determine if it's an image or video based on common extensions
+                                const urlLower = obj.video_url.toLowerCase();
+                                if (urlLower.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                                    obj.type = 'image';
+                                } else if (urlLower.match(/\.(mp4|webm|ogg|mov|avi)$/i)) {
+                                    obj.type = 'video';
+                                } else {
+                                    // Default to image if we can't determine
+                                    obj.type = 'image';
+                                }
+                            } else {
+                                obj.type = 'link';
+                            }
                         } else if (obj.video_url.match(/\.(mp4|webm|ogg)$/i)) {
                             obj.type = 'video';
                         } else if (obj.video_url.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
                             obj.type = 'image';
+                        } else {
+                            obj.type = 'link';
                         }
                     }
                     
@@ -526,6 +562,9 @@
                 } else if (media.type === 'image') {
                     typeBadge.textContent = 'Image';
                     typeBadge.classList.add('bg-green-500', 'text-white');
+                } else if (media.type === 'link') {
+                    typeBadge.textContent = 'Link';
+                    typeBadge.classList.add('bg-purple-500', 'text-white');
                 }
                 
                 const contentContainer = document.createElement('div');
@@ -607,7 +646,21 @@
                     contentContainer.className = 'image-container';
                     
                     const imgElement = document.createElement('img');
-                    imgElement.src = media.video_url;
+                    
+                    // Check if it's a Google Drive image
+                    if (media.video_url.includes('drive.google.com')) {
+                        // Extract file ID from Google Drive URL
+                        const fileId = extractGoogleDriveFileId(media.video_url);
+                        if (fileId) {
+                            // Use Google Drive thumbnail URL for preview
+                            imgElement.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+                        } else {
+                            imgElement.src = media.video_url;
+                        }
+                    } else {
+                        imgElement.src = media.video_url;
+                    }
+                    
                     imgElement.alt = media.title || 'Image';
                     imgElement.loading = 'lazy';
                     
@@ -616,6 +669,35 @@
                     });
                     
                     contentContainer.appendChild(imgElement);
+                    
+                    // Add download button for images
+                    const downloadBtn = document.createElement('div');
+                    downloadBtn.className = 'download-btn';
+                    downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download';
+                    downloadBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        downloadImage(media.video_url, media.title || 'image');
+                    });
+                    contentContainer.appendChild(downloadBtn);
+                } else if (media.type === 'link') {
+                    contentContainer.className = 'video-placeholder';
+                    const linkDiv = document.createElement('div');
+                    linkDiv.className = 'text-center p-4';
+                    linkDiv.innerHTML = `
+                        <i class="fas fa-external-link-alt text-3xl mb-2 text-gray-400 dark:text-gray-500"></i>
+                        <p class="text-gray-500 dark:text-gray-400">External Link</p>
+                        <button class="mt-2 px-3 py-1 bg-primary-500 text-white rounded text-sm hover:bg-primary-600 transition-colors">
+                            Open Link
+                        </button>
+                    `;
+                    
+                    const openBtn = linkDiv.querySelector('button');
+                    openBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        window.open(media.video_url, '_blank');
+                    });
+                    
+                    contentContainer.appendChild(linkDiv);
                 } else {
                     contentContainer.className = 'video-placeholder';
                     const errorDiv = document.createElement('div');
@@ -644,12 +726,53 @@
                 card.appendChild(mediaContainer);
                 card.appendChild(cardBody);
                 
-                // Add click event to open in fullscreen
-                contentContainer.addEventListener('click', () => {
-                    openFullscreenViewer(media, index);
-                });
+                // Add click event to open in fullscreen (except for links)
+                if (media.type !== 'link') {
+                    contentContainer.addEventListener('click', (e) => {
+                        // For Google Drive images, we need to handle differently
+                        if (media.type === 'image' && media.video_url.includes('drive.google.com')) {
+                            // Try to open in fullscreen viewer first
+                            try {
+                                openFullscreenViewer(media, index);
+                            } catch (error) {
+                                console.error('Error opening Google Drive image in viewer:', error);
+                                // If that fails, open in new tab
+                                window.open(media.video_url, '_blank');
+                            }
+                        } else {
+                            openFullscreenViewer(media, index);
+                        }
+                    });
+                }
                 
                 return card;
+            }
+            
+            // Extract Google Drive file ID from URL
+            function extractGoogleDriveFileId(url) {
+                const match = url.match(/\/file\/d\/([^\/]+)/);
+                return match ? match[1] : null;
+            }
+            
+            // Download image
+            function downloadImage(url, filename) {
+                // For Google Drive images, we need to construct a direct download URL
+                let downloadUrl = url;
+                
+                if (url.includes('drive.google.com')) {
+                    const fileId = extractGoogleDriveFileId(url);
+                    if (fileId) {
+                        downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+                    }
+                }
+                
+                // Create a temporary anchor element to trigger the download
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = filename || 'download';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
             }
             
             // Show error message in media container
@@ -703,7 +826,20 @@
                     videoContainer.className = 'fullscreen-video relative';
                     
                     const videoElement = document.createElement('video');
-                    videoElement.src = media.video_url;
+                    
+                    // Check if it's a Google Drive video
+                    if (media.video_url.includes('drive.google.com')) {
+                        const fileId = extractGoogleDriveFileId(media.video_url);
+                        if (fileId) {
+                            // Use Google Drive direct video URL
+                            videoElement.src = `https://drive.google.com/uc?export=download&id=${fileId}`;
+                        } else {
+                            videoElement.src = media.video_url;
+                        }
+                    } else {
+                        videoElement.src = media.video_url;
+                    }
+                    
                     videoElement.controls = true;
                     videoElement.autoplay = true;
                     videoElement.className = 'w-full h-full';
@@ -719,11 +855,45 @@
                     // Start progress update interval
                     progressInterval = setInterval(updateProgressBar, 1000);
                 } else if (media.type === 'image') {
+                    const imgContainer = document.createElement('div');
+                    imgContainer.className = 'relative w-full h-full flex items-center justify-center';
+                    
                     const imgElement = document.createElement('img');
-                    imgElement.src = media.video_url;
+                    
+                    // Check if it's a Google Drive image
+                    if (media.video_url.includes('drive.google.com')) {
+                        const fileId = extractGoogleDriveFileId(media.video_url);
+                        if (fileId) {
+                            // Try to use direct image URL for fullscreen viewer
+                            imgElement.src = `https://drive.google.com/uc?export=view&id=${fileId}`;
+                            
+                            // If that fails, fall back to opening in new tab
+                            imgElement.addEventListener('error', () => {
+                                console.log('Failed to load Google Drive image in viewer, opening in new tab');
+                                window.open(media.video_url, '_blank');
+                                closeFullscreenViewer();
+                            });
+                        } else {
+                            imgElement.src = media.video_url;
+                        }
+                    } else {
+                        imgElement.src = media.video_url;
+                    }
+                    
                     imgElement.alt = media.title || 'Image';
                     imgElement.className = 'fullscreen-image';
-                    fullscreenContent.appendChild(imgElement);
+                    
+                    // Add download button
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.className = 'absolute bottom-4 right-4 bg-black bg-opacity-70 text-white px-4 py-2 rounded-full flex items-center gap-2 hover:bg-opacity-90 transition-colors';
+                    downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download';
+                    downloadBtn.addEventListener('click', () => {
+                        downloadImage(media.video_url, media.title || 'image');
+                    });
+                    
+                    imgContainer.appendChild(imgElement);
+                    imgContainer.appendChild(downloadBtn);
+                    fullscreenContent.appendChild(imgContainer);
                 } else {
                     showFullscreenError('Unknown media type');
                 }
@@ -846,9 +1016,23 @@
                     showShortcutHint('Skipped forward 5 seconds');
                 });
                 
+                // Download button for videos
+                const downloadBtn = document.createElement('button');
+                downloadBtn.className = 'control-btn';
+                downloadBtn.innerHTML = '<i class="fas fa-download"></i>';
+                downloadBtn.addEventListener('click', () => {
+                    const a = document.createElement('a');
+                    a.href = videoElement.src;
+                    a.download = 'video.mp4';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                });
+                
                 controlButtons.appendChild(skipBackBtn);
                 controlButtons.appendChild(speedControl);
                 controlButtons.appendChild(skipForwardBtn);
+                controlButtons.appendChild(downloadBtn);
                 
                 controls.appendChild(controlBar);
                 controls.appendChild(controlButtons);
